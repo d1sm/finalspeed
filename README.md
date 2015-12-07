@@ -7,4 +7,3 @@ FinalSpeed是高速双边加速软件,可加速所有基于tcp协议的网络服
 客户端启动类: net.fs.client.FSClient
 服务端启动类: net.fs.server.FSServer
 
-FinalSpeed论坛 http://www.d1sm.net/forum-44-1.html
