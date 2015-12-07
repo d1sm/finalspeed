@@ -12,7 +12,7 @@ public class RUDPConfig {
 	
 	public static boolean twice_tcp=false;
 		
-	public static int maxWin = 1024;
+	public static int maxWin = 5*1024;
 	
 	public static int ackListDelay = 5;
 	public static int ackListSum = 300;
