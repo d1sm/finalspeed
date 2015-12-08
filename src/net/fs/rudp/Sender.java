@@ -240,10 +240,8 @@ public class Sender {
 	
 	void close(){
 		synchronized (winOb){
-			winOb.notifyAll();
-		}
-		if(!closed){
 			closed=true;
+			winOb.notifyAll();
 		}
 	}
 	

@@ -50,14 +50,16 @@ public class ResendManage implements Runnable{
 					if(ri.conn.sender.getDataMessage(ri.sequence)!=null){
 
 						if(!ri.conn.stopnow){
-							Route.es.execute(new Runnable() {
-								
-								@Override
-								public void run() {
-									ri.conn.sender.reSend(ri.sequence,ri.getCount());
-								}
-								
-							});
+							//多线程重发容易内存溢出
+//							Route.es.execute(new Runnable() {
+//								
+//								@Override
+//								public void run() {
+//									ri.conn.sender.reSend(ri.sequence,ri.getCount());
+//								}
+//								
+//							});
+							ri.conn.sender.reSend(ri.sequence,ri.getCount());
 						}
 					
 					}

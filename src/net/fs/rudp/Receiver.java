@@ -136,7 +136,6 @@ public class Receiver {
 							}
 						}
 					}else if(sType==net.fs.rudp.message.MessageType.sType_AckListMessage){
-						long t2=System.currentTimeMillis();
 						AckListMessage alm=new AckListMessage(dp);
 						int lastRead3=alm.getLastRead();
 						if(lastRead3>lastRead2){
@@ -170,11 +169,7 @@ public class Receiver {
 						}
 
 						if(checkWin()){
-							long t1=System.currentTimeMillis();
 							conn.sender.play();
-							int n=(int) (System.currentTimeMillis()-t1);
-							if(n>0){
-							}
 						}
 					}else if(sType==net.fs.rudp.message.MessageType.sType_CloseMessage_Stream){
 						CloseMessage_Stream cm=new CloseMessage_Stream(dp);
