@@ -27,6 +27,8 @@ public class FSServer {
 	static FSServer udpServer;
 
 	String systemName = System.getProperty("os.name").toLowerCase();
+	
+	boolean success_firewall_windows=true;
 
 	public static void main(String[] args) throws Exception {
 		FSServer fs = new FSServer();
@@ -50,6 +52,8 @@ public class FSServer {
 		if (systemName.equals("linux")) {
 			startFirewall_linux();
 			setFireWall_linux_udp();
+		}else if(systemName.contains("windows")){
+			startFirewall_windows();
 		}
 
 		Route.es.execute(new Runnable() {
@@ -60,6 +64,12 @@ public class FSServer {
 					route_tcp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, true);
 					if (systemName.equals("linux")) {
 						setFireWall_linux_tcp();
+					}else if(systemName.contains("windows")){
+						if(success_firewall_windows){
+							setFireWall_windows_tcp();
+						}else{
+							System.out.println("启动windows防火墙失败,请先运行防火墙服务.");
+						}
 					}
 				} catch (Exception e) {
 					// e.printStackTrace();
@@ -67,6 +77,121 @@ public class FSServer {
 			}
 		});
 
+	}
+	
+	void startFirewall_windows(){
+
+		String runFirewall="netsh advfirewall set allprofiles state on";
+		Thread standReadThread=null;
+		Thread errorReadThread=null;
+		try {
+			final Process p = Runtime.getRuntime().exec(runFirewall,null);
+			standReadThread=new Thread(){
+				public void run(){
+					InputStream is=p.getInputStream();
+					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
+					while (true){
+						String line; 
+						try {
+							line = localBufferedReader.readLine();
+							if (line == null){ 
+								break;
+							}else{ 
+								if(line.contains("Windows")){
+									success_firewall_windows=false;
+								}
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+							//error();
+							break;
+						}
+					}
+				}
+			};
+			standReadThread.start();
+			
+			errorReadThread=new Thread(){
+				public void run(){
+					InputStream is=p.getErrorStream();
+					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
+					while (true){
+						String line; 
+						try {
+							line = localBufferedReader.readLine();
+							if (line == null){ 
+								break;
+							}else{ 
+								System.out.println("error"+line);
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+							//error();
+							break;
+						}
+					}
+				}
+			};
+			errorReadThread.start();
+		} catch (IOException e) {
+			e.printStackTrace();
+			success_firewall_windows=false;
+			//error();
+		}
+		
+		if(standReadThread!=null){
+			try {
+				standReadThread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		if(errorReadThread!=null){
+			try {
+				errorReadThread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	
+	}
+	
+	void setFireWall_windows_tcp() {
+		cleanRule_windows();
+		try {
+			if(systemName.contains("xp")||systemName.contains("2003")){
+				String cmd_add1="ipseccmd -w REG -p \"tcptun_fs_server\" -r \"Block TCP/"+routePort+"\" -f *+0:"+routePort+":TCP "+" -n BLOCK -x ";
+				final Process p2 = Runtime.getRuntime().exec(cmd_add1,null);
+				p2.waitFor();
+			}else {
+				String cmd_add1="netsh advfirewall firewall add rule name=tcptun_fs_server protocol=TCP dir=out localport="+routePort+" action=block ";
+				final Process p2 = Runtime.getRuntime().exec(cmd_add1,null);
+				p2.waitFor();
+				String cmd_add2="netsh advfirewall firewall add rule name=tcptun_fs_server protocol=TCP dir=in localport="+routePort+" action=block ";
+				Process p3 = Runtime.getRuntime().exec(cmd_add2,null);
+				p3.waitFor();
+			}
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	void cleanRule_windows(){
+		try {
+			if(systemName.contains("xp")||systemName.contains("2003")){
+				String cmd_delete="ipseccmd -p \"tcptun_fs_server\" -w reg -y";
+				final Process p1 = Runtime.getRuntime().exec(cmd_delete,null);
+				p1.waitFor();
+			}else {
+				String cmd_delete="netsh advfirewall firewall delete rule name=tcptun_fs_server ";
+				final Process p1 = Runtime.getRuntime().exec(cmd_delete,null);
+				p1.waitFor();
+			}
+		
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
 	}
 
 	void startFirewall_linux() {
