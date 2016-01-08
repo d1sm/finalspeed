@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.BindException;
 
 import net.fs.rudp.ConnectionProcessor;
 import net.fs.rudp.Route;
@@ -30,8 +31,17 @@ public class FSServer {
 	
 	boolean success_firewall_windows=true;
 
-	public static void main(String[] args) throws Exception {
-		FSServer fs = new FSServer();
+	public static void main(String[] args) {
+		try {
+			FSServer fs = new FSServer();
+		} catch (Exception e) {
+			e.printStackTrace();
+			if(e instanceof BindException){
+				MLog.println("Udp port already in use.");
+			}
+			MLog.println("Start failed.");
+			System.exit(0);
+		}
 	}
 
 	static FSServer get() {
@@ -39,6 +49,8 @@ public class FSServer {
 	}
 
 	public FSServer() throws Exception {
+		MLog.info("");
+		MLog.info("FinalSpeed server starting... ");
 		MLog.info("System Name: " + systemName);
 		udpServer = this;
 		final MapTunnelProcessor mp = new MapTunnelProcessor();
@@ -393,6 +405,10 @@ public class FSServer {
 			}
 		}
 		return content;
+	}
+
+	public int getRoutePort() {
+		return routePort;
 	}
 
 }

@@ -195,7 +195,7 @@ public class CapEnv {
 	void initInterface() throws Exception{
 		detectInterface();
 		List<PcapNetworkInterface> allDevs = Pcaps.findAllDevs();
-		MLog.println("网络接口列表10: ");
+		MLog.println("Network Interface List: ");
 		for(PcapNetworkInterface pi:allDevs){
 			String desString="";
 			if(pi.getDescription()!=null){
@@ -213,9 +213,10 @@ public class CapEnv {
 			if(nif.getDescription()!=null){
 				desString=nif.getDescription();
 			}
-			MLog.info("自动选择网络接口:\n"+"  "+desString+"   "+nif.getName());
+			MLog.info("Selected Network Interface:\n"+"  "+desString+"   "+nif.getName());
 		}else {
 			tcpEnable=false;
+			MLog.info("Select Network Interface failed,can't use TCP protocal!\n");
 		}
 		if(tcpEnable){
 			sendHandle = nif.openLive(SNAPLEN,getMode(nif), READ_TIMEOUT);
@@ -251,6 +252,8 @@ public class CapEnv {
 			};
 			thread.start();
 		}
+		
+		MLog.info("FinalSpeed server start success.");
 	
 	}
 

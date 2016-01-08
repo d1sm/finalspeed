@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="lib/pcap4j-core.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-1.6.6.jar"/>
 	<classpathentry kind="lib" path="lib/pcap4j-packetfactory-static.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-nop-1.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
