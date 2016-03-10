@@ -7,8 +7,10 @@ FinalSpeed是高速双边加速软件,可加速所有基于tcp协议的网络服
 [服务端安装说明](http://www.d1sm.net/thread-8-1-1.html)
 
 ### 使用帮助
+```
 java -jar finalspeed.jar -b 运行CLI版
 java -jar finalspeed.jar 运行GUI版
+```
 
 CLI版本需要手动配置, 且配置文件与finalspeed必须处在同一目录下.
 clien_config.json
