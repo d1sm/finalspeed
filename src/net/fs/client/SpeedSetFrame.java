@@ -2,24 +2,13 @@
 
 package net.fs.client;
 
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.Insets;
+import net.fs.utils.MLog;
+import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-
-import net.fs.rudp.Route;
-import net.miginfocom.swing.MigLayout;
 
 public class SpeedSetFrame extends JDialog{
 
@@ -98,7 +87,12 @@ public class SpeedSetFrame extends JDialog{
 
 		pack();
 		setLocationRelativeTo(parent);
-		setVisible(true);
+		if(ui.isVisible){
+			setVisible(true);
+		} else {
+			MLog.println("请在client_config.json中设置带宽");
+			System.exit(0);
+		}
 	}
 	
 	JButton createButton(String name){
