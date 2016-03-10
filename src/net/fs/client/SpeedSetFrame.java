@@ -2,13 +2,21 @@
 
 package net.fs.client;
 
-import net.fs.utils.MLog;
-import net.miginfocom.swing.MigLayout;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Dialog;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import net.fs.utils.MLog;
+import net.miginfocom.swing.MigLayout;
 
 public class SpeedSetFrame extends JDialog{
 
@@ -17,8 +25,6 @@ public class SpeedSetFrame extends JDialog{
 	ClientUI ui;
 	
 	JTextField text_ds,text_us;
-	
-	int downloadSpeed,uploadSpeed;
 	
 	SpeedSetFrame(final ClientUI ui,JFrame parent){
 		super(parent,Dialog.ModalityType.APPLICATION_MODAL);
