@@ -393,9 +393,8 @@ public class ClientUI implements ClientUII, WindowListener {
         ActionListener listener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 mainFrame.toFront();
-                if (isVisible) {
-                    mainFrame.setVisible(true);
-                }
+                ClientUI.this.isVisible = true;
+                mainFrame.setVisible(true);
             }
         };
         trayIcon.addActionListener(listener);
@@ -683,7 +682,9 @@ public class ClientUI implements ClientUII, WindowListener {
 
             if (!b) {
                 //mainFrame.setVisible(true);
-                JOptionPane.showMessageDialog(null, "请以管理员身份运行! ");
+                if(isVisible) {
+                    JOptionPane.showMessageDialog(null, "请以管理员身份运行! ");
+                }
                 MLog.println("请以管理员身份运行! ");
                 System.exit(0);
             }
