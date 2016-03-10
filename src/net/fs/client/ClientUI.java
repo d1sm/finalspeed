@@ -393,7 +393,6 @@ public class ClientUI implements ClientUII, WindowListener {
         ActionListener listener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 mainFrame.toFront();
-                ClientUI.this.isVisible = true;
                 mainFrame.setVisible(true);
             }
         };
@@ -1007,6 +1006,9 @@ public class ClientUI implements ClientUII, WindowListener {
 
     @Override
     public void windowClosing(WindowEvent e) {
+        if(!isVisible) {
+            mainFrame.setVisible(false);
+        }
     }
 
     @Override
