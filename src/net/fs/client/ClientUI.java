@@ -124,6 +124,7 @@ public class ClientUI implements ClientUII, WindowListener {
     JRadioButton r_tcp, r_udp;
 
     String updateUrl;
+    private boolean visible;
 
     {
         domain = "d1sm.net";
@@ -132,7 +133,7 @@ public class ClientUI implements ClientUII, WindowListener {
     }
 
     ClientUI(boolean isVisible) {
-        this.isVisible = isVisible;
+        setVisible(isVisible);
         systemName = System.getProperty("os.name").toLowerCase();
         MLog.info("System: " + systemName + " " + System.getProperty("os.version"));
         ui = this;
@@ -393,6 +394,7 @@ public class ClientUI implements ClientUII, WindowListener {
         ActionListener listener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 mainFrame.toFront();
+                setVisible(true);
                 mainFrame.setVisible(true);
             }
         };
@@ -681,7 +683,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
             if (!b) {
                 //mainFrame.setVisible(true);
-                if(isVisible) {
+                if (isVisible) {
                     JOptionPane.showMessageDialog(null, "请以管理员身份运行! ");
                 }
                 MLog.println("请以管理员身份运行! ");
@@ -1006,9 +1008,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
     @Override
     public void windowClosing(WindowEvent e) {
-        if(!isVisible) {
-            mainFrame.setVisible(false);
-        }
+        mainFrame.setVisible(false);
     }
 
     @Override
@@ -1060,4 +1060,7 @@ public class ClientUI implements ClientUII, WindowListener {
         this.osx_fw_ipfw = osx_fw_ipfw;
     }
 
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
 }
