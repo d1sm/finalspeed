@@ -124,7 +124,6 @@ public class ClientUI implements ClientUII, WindowListener {
     JRadioButton r_tcp, r_udp;
 
     String updateUrl;
-    private boolean visible;
 
     {
         domain = "d1sm.net";
@@ -687,7 +686,7 @@ public class ClientUI implements ClientUII, WindowListener {
                     JOptionPane.showMessageDialog(null, "请以管理员身份运行! ");
                 }
                 MLog.println("请以管理员身份运行! ");
-                System.exit(0);
+//                System.exit(0);
             }
         }
     }
@@ -1061,6 +1060,6 @@ public class ClientUI implements ClientUII, WindowListener {
     }
 
     public void setVisible(boolean visible) {
-        this.visible = visible;
+        this.isVisible = visible;
     }
 }
