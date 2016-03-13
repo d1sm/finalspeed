@@ -139,7 +139,7 @@ public class ClientUI implements ClientUII, WindowListener {
         mainFrame = new JFrame();
         mainFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(logoImg));
         initUI();
-        checkQuanxian();
+//        checkQuanxian();
         loadConfig();
         mainFrame.setTitle("FinalSpeed 1.0");
         mainFrame.addWindowListener(this);
