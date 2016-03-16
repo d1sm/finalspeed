@@ -131,7 +131,7 @@ public class ClientUI implements ClientUII, WindowListener {
         updateUrl = "http://fs.d1sm.net/finalspeed/update.properties";
     }
 
-    ClientUI(boolean isVisible) {
+    ClientUI(final boolean isVisible) {
         setVisible(isVisible);
         systemName = System.getProperty("os.name").toLowerCase();
         MLog.info("System: " + systemName + " " + System.getProperty("os.version"));
