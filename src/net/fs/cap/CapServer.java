@@ -8,7 +8,7 @@ public class CapServer {
 	CapServer(){
 		CapEnv capEnv=null;
 		try {
-			capEnv=new CapEnv(false);
+			capEnv=new CapEnv(false,true);
 			capEnv.init();
 		} catch (Exception e) {
 			e.printStackTrace();

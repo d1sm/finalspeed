@@ -59,7 +59,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 			headData = tis.read2();
 			String hs=new String(headData,"utf-8");
 			JSONObject requestJSon=JSONObject.parseObject(hs);
-			int dstPort=requestJSon.getIntValue("dst_port");
+			final int dstPort=requestJSon.getIntValue("dst_port");
 			String message="";
 			JSONObject responeJSon=new JSONObject();
 			int code=Constant.code_failed;			
@@ -84,13 +84,14 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 
 				public void run() {
 					try {
-						p1.pipe(sis, tos,300*1024,p2);
-					} catch (IOException e) {
-						//e.printStackTrace();
-					} catch (Exception e) {
+						p1.pipe(sis, tos,100*1024,p2);
+					}catch (Exception e) {
 						//e.printStackTrace();
 					}finally{
 						close();
+						if(p1.getReadedLength()==0){
+							MLog.println("端口"+dstPort+"无返回数据");
+						}
 					}
 				}
 
@@ -99,10 +100,8 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 
 				public void run() {
 					try {
-						p2.pipe(tis,sos,1024*1024*1024,conn);
-					} catch (IOException e) {
-						//e.printStackTrace();
-					} catch (Exception e) {
+						p2.pipe(tis,sos,100*1024*1024,conn);
+					}catch (Exception e) {
 						//e.printStackTrace();
 					}finally{
 						close();

@@ -5,9 +5,13 @@ package net.fs.client;
 import java.io.Serializable;
 import java.net.ServerSocket;
 
-
 public class MapRule implements Serializable{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3504577683070928480L;
+
 	int listen_port;
 	
 	int dst_port;
