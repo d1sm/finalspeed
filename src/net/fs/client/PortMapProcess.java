@@ -14,6 +14,7 @@ import net.fs.rudp.Constant;
 import net.fs.rudp.Route;
 import net.fs.rudp.UDPInputStream;
 import net.fs.rudp.UDPOutputStream;
+import net.fs.utils.MLog;
 
 import com.alibaba.fastjson.JSONObject;
 
@@ -35,8 +36,6 @@ public class PortMapProcess implements ClientProcessorInterface{
 
 	public Socket srcSocket,dstSocket;
 
-	String password_proxy_md5;
-
 	DataInputStream srcIs=null;
 	DataOutputStream srcOs=null;
 
@@ -44,13 +43,12 @@ public class PortMapProcess implements ClientProcessorInterface{
 	boolean success=false;
 
 	public PortMapProcess(MapClient mapClient,Route route,final Socket srcSocket,String serverAddress2,int serverPort2,String password_proxy_md5,
-			String dstAddress,int dstPort){
+			String dstAddress,final int dstPort){
 		this.mapClient=mapClient;
 		this.serverAddress=serverAddress2;
 		this.serverPort=serverPort2;
 
 		this.srcSocket=srcSocket;
-		this.password_proxy_md5=password_proxy_md5;
 
 		try {
 			srcIs = new DataInputStream(srcSocket.getInputStream());
@@ -62,8 +60,8 @@ public class PortMapProcess implements ClientProcessorInterface{
 			JSONObject requestJson=new JSONObject();
 			requestJson.put("dst_address", dstAddress);
 			requestJson.put("dst_port", dstPort);
-			requestJson.put("password_proxy_md5", password_proxy_md5);
 			byte[] requestData=requestJson.toJSONString().getBytes("utf-8");
+			
 			tos.write(requestData, 0, requestData.length);
 
 
@@ -84,12 +82,20 @@ public class PortMapProcess implements ClientProcessorInterface{
 
 					@Override
 					public void run() {
+						long t=System.currentTimeMillis();
+						p2.setDstPort(dstPort);
 						try {
 							p2.pipe(tis, srcOs,1024*1024*1024,null);
 						}catch (Exception e) {
 							e.printStackTrace();
 						}finally{
 							close();
+							if(p2.getReadedLength()==0){
+								//String msg="fs服务连接成功,加速端口"+dstPort+"连接失败1";
+								String msg="端口"+dstPort+"无返回数据";
+								MLog.println(msg);
+								ClientUI.ui.setMessage(msg);
+							}
 						}
 					}
 
@@ -110,16 +116,19 @@ public class PortMapProcess implements ClientProcessorInterface{
 
 				});
 				success=true;
-				uimessage=("连接服务器成功");
+				uimessage=("fs服务连接成功");
+				ClientUI.ui.setMessage(uimessage);
 			}else {
 				close();
-				uimessage="连接服务器失败,"+message;
-			}
-			if(ClientUI.ui!=null){
+				uimessage="fs服务连接成功,端口"+dstPort+"连接失败2";
 				ClientUI.ui.setMessage(uimessage);
+				MLog.println(uimessage);
 			}
 		} catch (Exception e1) {
 			e1.printStackTrace();
+			String msg="fs服务连接失败!";
+			ClientUI.ui.setMessage(msg);
+			MLog.println(msg);
 		}
 
 	}

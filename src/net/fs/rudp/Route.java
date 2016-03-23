@@ -87,7 +87,7 @@ public class Route {
 		es=executor;
 	}
 	
-	public Route(String pocessName,short routePort,int mode2,boolean tcp) throws Exception{
+	public Route(String pocessName,short routePort,int mode2,boolean tcp,boolean tcpEnvSuccess) throws Exception{
 		
 		this.mode=mode2;
 		useTcpTun=tcp;
@@ -98,7 +98,7 @@ public class Route {
 				VDatagramSocket d=new VDatagramSocket(routePort);
 				d.setClient(false);
 				try {
-					capEnv=new CapEnv(false);
+					capEnv=new CapEnv(false,tcpEnvSuccess);
 					capEnv.setListenPort(routePort);
 					capEnv.init();
 				} catch (Exception e) {
@@ -113,7 +113,7 @@ public class Route {
 				VDatagramSocket d=new VDatagramSocket();
 				d.setClient(true);
 				try {
-					capEnv=new CapEnv(true);
+					capEnv=new CapEnv(true,tcpEnvSuccess);
 					capEnv.init();
 				} catch (Exception e) {
 					//e.printStackTrace();
