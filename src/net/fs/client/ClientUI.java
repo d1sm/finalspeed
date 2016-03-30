@@ -39,6 +39,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -47,6 +48,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
@@ -59,6 +61,7 @@ import net.fs.utils.MLog;
 import net.fs.utils.Tools;
 import net.miginfocom.swing.MigLayout;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 public class ClientUI implements ClientUII, WindowListener {
@@ -67,7 +70,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
     JComponent mainPanel;
 
-    JTextField text_serverAddress;
+    JComboBox text_serverAddress;
 
     MapClient mapClient;
 
@@ -89,7 +92,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
     int serverVersion = -1;
 
-    int localVersion = 2;
+    int localVersion = 3;
 
     boolean checkingUpdate = false;
 
@@ -164,7 +167,7 @@ public class ClientUI implements ClientUII, WindowListener {
         initUI();
         checkQuanxian();
         loadConfig();
-        mainFrame.setTitle("FinalSpeed 1.1测试版");
+        mainFrame.setTitle("FinalSpeed 1.12测试版");
         mainFrame.addWindowListener(this);
         mainPanel = (JPanel) mainFrame.getContentPane();
         mainPanel.setLayout(new MigLayout("align center , insets 10 10 10 10"));
@@ -278,11 +281,52 @@ public class ClientUI implements ClientUII, WindowListener {
         p1.setLayout(new MigLayout("insets 0 0 0 0"));
         pa.add(p1, "wrap");
         p1.add(new JLabel("地址:"), "width 50::");
-        text_serverAddress = new JTextField();
+        text_serverAddress = new JComboBox();
         text_serverAddress.setToolTipText("主机:端口号");
-        p1.add(text_serverAddress, "width 130::");
+        p1.add(text_serverAddress, "width 150::");
+        text_serverAddress.setEditable(true);
         TextComponentPopupMenu.installToComponent(text_serverAddress);
-
+        
+        ListCellRenderer renderer = new AddressCellRenderer();
+        text_serverAddress.setRenderer(renderer);
+        text_serverAddress.setEditable(true);
+        
+        text_serverAddress.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//System.out.println(text_serverAddress.getSelectedItem().toString());
+			}
+		});
+        
+        for(int n=0;n<config.getRecentAddressList().size();n++){
+        	text_serverAddress.addItem(config.getRecentAddressList().get(n));
+        }
+        
+        if(config.getRecentAddressList().size()==0){
+        	text_serverAddress.setSelectedItem("");
+        }
+        
+        JButton button_removeAddress=createButton("删除");
+        p1.add(button_removeAddress, "");
+        button_removeAddress.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String address=text_serverAddress.getSelectedItem().toString();
+				if(!address.equals("")){
+					int result=JOptionPane.showConfirmDialog(mainFrame, "确定删除吗?","消息", JOptionPane.YES_NO_OPTION);
+					if(result==JOptionPane.OK_OPTION){
+						text_serverAddress.removeItem(address);
+						String selectText="";
+						if(text_serverAddress.getModel().getSize()>0){
+							selectText=text_serverAddress.getModel().getElementAt(0).toString();
+						}
+						text_serverAddress.setSelectedItem(selectText);
+					}
+				}
+			}
+		});
 
         JPanel panelr = new JPanel();
         pa.add(panelr, "wrap");
@@ -424,15 +468,7 @@ public class ClientUI implements ClientUII, WindowListener {
         updateUISpeed(0, 0, 0);
         setMessage(" ");
 
-        String server_addressTxt = config.getServerAddress();
-        if (config.getServerAddress() != null && !config.getServerAddress().equals("")) {
-            if (config.getServerPort() != 150
-                    && config.getServerPort() != 0) {
-                server_addressTxt += (":" + config.getServerPort());
-            }
-        }
-
-        text_serverAddress.setText(server_addressTxt);
+        text_serverAddress.setSelectedItem(getServerAddressFromConfig());
 
         if (config.getRemoteAddress() != null && !config.getRemoteAddress().equals("") && config.getRemotePort() > 0) {
             String remoteAddressTxt = config.getRemoteAddress() + ":" + config.getRemotePort();
@@ -516,9 +552,9 @@ public class ClientUI implements ClientUII, WindowListener {
         	tcpEnvSuccess=false;
             if (isVisible) {
                 mainFrame.setVisible(true);
-                JOptionPane.showMessageDialog(mainFrame, "启动ipfw/pf防火墙失败,请先安装.");
+                JOptionPane.showMessageDialog(mainFrame, "启动ipfw/pfctl防火墙失败,请先安装.");
             }
-            MLog.println("启动ipfw/pf防火墙失败,请先安装.");
+            MLog.println("启动ipfw/pfctl防火墙失败,请先安装.");
             //System.exit(0);
         }
 
@@ -635,6 +671,17 @@ public class ClientUI implements ClientUII, WindowListener {
 
         
     }
+    
+    String getServerAddressFromConfig(){
+    	 String server_addressTxt = config.getServerAddress();
+         if (config.getServerAddress() != null && !config.getServerAddress().equals("")) {
+             if (config.getServerPort() != 150
+                     && config.getServerPort() != 0) {
+                 server_addressTxt += (":" + config.getServerPort());
+             }
+         }
+         return server_addressTxt;
+    }
 
     void checkFireWallOn() {
         if (systemName.contains("os x")) {
@@ -643,19 +690,18 @@ public class ClientUI implements ClientUII, WindowListener {
                 final Process p = Runtime.getRuntime().exec(runFirewall, null);
                 osx_fw_ipfw = true;
             } catch (IOException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
             runFirewall = "pfctl";
             try {
                 final Process p = Runtime.getRuntime().exec(runFirewall, null);
                 osx_fw_pf = true;
             } catch (IOException e) {
-                e.printStackTrace();
+               // e.printStackTrace();
             }
             success_firewall_osx = osx_fw_ipfw | osx_fw_pf;
         } else if (systemName.contains("linux")) {
             String runFirewall = "service iptables start";
-
         } else if (systemName.contains("windows")) {
             String runFirewall = "netsh advfirewall set allprofiles state on";
             Thread standReadThread = null;
@@ -834,6 +880,13 @@ public class ClientUI implements ClientUII, WindowListener {
             if (json.containsKey("auto_start")) {
                 cfg.setAutoStart(json.getBooleanValue("auto_start"));
             }
+            if (json.containsKey("recent_address_list")) {
+            	JSONArray list=json.getJSONArray("recent_address_list");
+            	for (int i = 0; i < list.size(); i++) {
+            		cfg.getRecentAddressList().add(list.get(i).toString());
+				}
+            }
+           
             config = cfg;
         } catch (Exception e) {
             e.printStackTrace();
@@ -847,9 +900,12 @@ public class ClientUI implements ClientUII, WindowListener {
                 boolean success = false;
                 try {
                     int serverPort = 150;
-                    String addressTxt = text_serverAddress.getText();
+                    String addressTxt ="";
+                    if(text_serverAddress.getSelectedItem()!=null){
+                    	addressTxt =text_serverAddress.getSelectedItem().toString();
+                    }
                     addressTxt = addressTxt.trim().replaceAll(" ", "");
-                    text_serverAddress.setText(addressTxt);
+                   
                     String serverAddress = addressTxt;
                     if (addressTxt.startsWith("[")) {
                         int index = addressTxt.lastIndexOf("]:");
@@ -880,6 +936,28 @@ public class ClientUI implements ClientUII, WindowListener {
                     json.put("socks5_port", config.getSocks5Port());
                     json.put("protocal", protocal);
                     json.put("auto_start", config.isAutoStart());
+
+                    
+                    if(text_serverAddress.getModel().getSize()>0){
+                    	text_serverAddress.removeItem(addressTxt);
+                    }
+                    text_serverAddress.insertItemAt(addressTxt, 0);
+                    text_serverAddress.setSelectedItem(addressTxt);;
+                    
+
+                    JSONArray recentAddressList=new JSONArray();
+                    
+                    
+                    int size=text_serverAddress.getModel().getSize();
+                    for(int n=0;n<size;n++){
+                    	String address=text_serverAddress.getModel().getElementAt(n).toString();
+                    	if(!address.equals("")){
+                    		recentAddressList.add(address);
+                    	}
+                    }
+                    json.put("recent_address_list", recentAddressList);
+                    
+                    
                     saveFile(json.toJSONString().getBytes("utf-8"), configFilePath);
                     config.setServerAddress(serverAddress);
                     config.setServerPort(serverPort);

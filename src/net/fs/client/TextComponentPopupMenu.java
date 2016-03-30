@@ -8,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
@@ -23,13 +24,13 @@ public class TextComponentPopupMenu extends JPopupMenu implements
 	private static final long serialVersionUID = 117096441855319758L;
 	private static TextComponentPopupMenu sharedInstance = null;
 
-	public static void installToComponent(JTextComponent c) {
+	public static void installToComponent(JComponent c) {
 		if (c instanceof JTextField && !(c instanceof JPasswordField)) {
 			c.addMouseListener(TextComponentPopupMenu.getSharedInstance());
 		}
 	}
 
-	public static void uninstallFromComponent(JTextComponent c) {
+	public static void uninstallFromComponent(JComponent c) {
 		if (c instanceof JTextField && !(c instanceof JPasswordField)) {
 			c.removeMouseListener(getSharedInstance());
 		}

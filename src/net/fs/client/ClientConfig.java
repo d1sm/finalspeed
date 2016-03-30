@@ -2,6 +2,8 @@
 
 package net.fs.client;
 
+import java.util.ArrayList;
+
 public class ClientConfig {
 	
 	String serverAddress="";
@@ -21,6 +23,8 @@ public class ClientConfig {
 	String protocal="tcp";
 	
 	boolean autoStart=false;
+	
+	ArrayList<String> recentAddressList=new ArrayList<String>();
 
 	public String getServerAddress() {
 		return serverAddress;
@@ -100,6 +104,14 @@ public class ClientConfig {
 
 	public void setAutoStart(boolean autoStart) {
 		this.autoStart = autoStart;
+	}
+
+	public ArrayList<String> getRecentAddressList() {
+		return recentAddressList;
+	}
+
+	public void setRecentAddressList(ArrayList<String> recentAddressList) {
+		this.recentAddressList = recentAddressList;
 	}
 	
 }
