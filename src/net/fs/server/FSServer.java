@@ -60,7 +60,7 @@ public class FSServer {
 			port_s = port_s.replaceAll("\n", "").replaceAll("\r", "");
 			routePort = Integer.parseInt(port_s);
 		}
-		route_udp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, false);
+		route_udp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, false,true);
 		if (systemName.equals("linux")) {
 			startFirewall_linux();
 			setFireWall_linux_udp();
@@ -73,7 +73,7 @@ public class FSServer {
 			@Override
 			public void run() {
 				try {
-					route_tcp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, true);
+					route_tcp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, true,true);
 					if (systemName.equals("linux")) {
 						setFireWall_linux_tcp();
 					}else if(systemName.contains("windows")){

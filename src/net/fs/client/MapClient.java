@@ -77,8 +77,10 @@ public class MapClient implements Trafficlistener{
 	long clientId;
 
 	Random ran=new Random();
+	
+	boolean tcpEnable;
 
-	MapClient(ClientUI ui) throws Exception {
+	MapClient(ClientUI ui,boolean tcpEnvSuccess) throws Exception {
 		this.ui=ui;
 		mapClient=this;
 		try {
@@ -95,16 +97,16 @@ public class MapClient implements Trafficlistener{
 			}.start();
 		} catch (Exception e) {
 			//e.printStackTrace();
-			//System.exit(0);
+			System.exit(0);
 		}
 		try {
-			route_tcp = new Route(null,routePort,Route.mode_client,true);
+			route_tcp = new Route(null,routePort,Route.mode_client,true,tcpEnvSuccess);
 		} catch (Exception e1) {
 			//e1.printStackTrace();
 			throw e1;
 		}
 		try {
-			route_udp = new Route(null,routePort,Route.mode_client,false);
+			route_udp = new Route(null,routePort,Route.mode_client,false,tcpEnvSuccess);
 		} catch (Exception e1) {
 			//e1.printStackTrace();
 			throw e1;

@@ -29,6 +29,11 @@ public class Pipe {
 	
 	int pvl;
 	
+	int readedLength;
+	
+	String successMessage;
+	
+	int dstPort=-1;
 
 	public void pipe(InputStream is,UDPOutputStream tos,int initSpeed,final Pipe p2) throws Exception{
 		
@@ -65,28 +70,42 @@ public class Pipe {
 		boolean sended=false;
 		boolean sendedb=false;
 		int n=0;
+		boolean msged=false;
 		while((len=tis.read(buf, 0, buf.length))>0){
+			readedLength+=len;
 			if(!sendedb){
 				pv=buf;
 				pvl=len;
 				sendedb=true;
 			}
-			n++;
-			long needTime=1000*len/maxSpeed;
-			long startTime=System.currentTimeMillis();
+			if(dstPort>0){
+				if(ClientUI.ui!=null){
+					if(!msged){
+						msged=true;
+						String msg="端口"+dstPort+"连接成功";
+						ClientUI.ui.setMessage(msg);
+						MLog.println(msg);
+					}
+					
+				}
+			}
 			os.write(buf, 0, len);
 			if(!sended){
 				sended=true;
 			}
-			long usedTime=System.currentTimeMillis()-startTime;
-			if(usedTime<needTime){
-				try {
-					Thread.sleep(needTime-usedTime);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
 		}
+	}
+
+
+
+	public int getReadedLength() {
+		return readedLength;
+	}
+
+
+
+	public void setDstPort(int dstPort) {
+		this.dstPort = dstPort;
 	}
 
 }

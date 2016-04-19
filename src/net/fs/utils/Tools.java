@@ -4,6 +4,7 @@ package net.fs.utils;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DecimalFormat;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -69,56 +70,10 @@ public class Tools {
 	
 
 	public static String getSizeStringKB(long size){
-		int gb=(int) (size/(1024*1024*1024));
-		int gbl=(int) (size%(1024*1024*1024));
-		int mb=gbl/(1024*1024);
-		int mbl=gbl%(1024*1024);
-		int kb=mbl/(1024);
-		String ls="";
-		if(gb>0){
-			ls+=gb+",";
-		}
-		if(mb>0){
-			String mbs="";
-			if(gb>0){
-				if(mb<10){
-					mbs+="00";
-				}else if(mb<100){
-					mbs+="0";
-				}
-			}
-			mbs+=mb;
-			ls+=mbs+",";
-		}else{
-			if(gb>0){
-				ls+="000,";
-			}
-		}
-
-		if(kb>0){
-			String kbs="";
-			if(gb>0|mb>0){
-				if(kb<10){
-					kbs+="00";
-				}else if(kb<100){
-					kbs+="0";
-				}
-			}
-			kbs+=kb;
-			ls+=kbs+" KB";
-		}else{
-			if(mb>0|gb>0){
-				ls+="000 KB";
-			}
-		}
-		if(size==0){
-			ls+=0+" KB";
-		}
-		if(size<1024){
-			//ls=size+" b";
-			ls=0+" KB";
-		}
-		return ls;
+	    if(size <= 0) return "0";
+	    final String[] units = new String[] { "B", "KB", "MB", "GB", "TB" };
+	    int digitGroups = (int) (Math.log10(size)/Math.log10(1024));
+	    return new DecimalFormat("#,##0.#").format(size/Math.pow(1024, digitGroups)) + " " + units[digitGroups];
 	}
 
 }

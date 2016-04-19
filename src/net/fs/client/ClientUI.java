@@ -22,18 +22,24 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Properties;
+import java.util.StringTokenizer;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -42,6 +48,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
@@ -49,10 +56,12 @@ import javax.swing.UIManager;
 import org.pcap4j.core.Pcaps;
 
 import net.fs.rudp.Route;
+import net.fs.utils.LogOutputStream;
 import net.fs.utils.MLog;
 import net.fs.utils.Tools;
 import net.miginfocom.swing.MigLayout;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 public class ClientUI implements ClientUII, WindowListener {
@@ -61,7 +70,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
     JComponent mainPanel;
 
-    JTextField text_serverAddress;
+    JComboBox text_serverAddress;
 
     MapClient mapClient;
 
@@ -83,7 +92,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
     int serverVersion = -1;
 
-    int localVersion = 1;
+    int localVersion = 3;
 
     boolean checkingUpdate = false;
 
@@ -124,24 +133,41 @@ public class ClientUI implements ClientUII, WindowListener {
     JRadioButton r_tcp, r_udp;
 
     String updateUrl;
+    
+    boolean min=false;
+    
+    LogFrame logFrame;
+    
+    LogOutputStream los;
+    
+    boolean tcpEnable=true;
 
     {
-        domain = "d1sm.net";
-        homeUrl = "http://www.d1sm.net/?client_fs";
+        domain = "ip4a.com";
+        homeUrl = "http://www.ip4a.com/?client_fs";
         updateUrl = "http://fs.d1sm.net/finalspeed/update.properties";
     }
 
-    ClientUI(boolean isVisible) {
+    ClientUI(final boolean isVisible,boolean min) {
+    	this.min=min;
         setVisible(isVisible);
+        
+        if(isVisible){
+        	 los=new LogOutputStream(System.out);
+             System.setOut(los);
+             System.setErr(los);
+        }
+        
+        
         systemName = System.getProperty("os.name").toLowerCase();
         MLog.info("System: " + systemName + " " + System.getProperty("os.version"));
         ui = this;
         mainFrame = new JFrame();
         mainFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(logoImg));
         initUI();
-//        checkQuanxian();
+        checkQuanxian();
         loadConfig();
-        mainFrame.setTitle("FinalSpeed 1.0");
+        mainFrame.setTitle("FinalSpeed 1.12测试版");
         mainFrame.addWindowListener(this);
         mainPanel = (JPanel) mainFrame.getContentPane();
         mainPanel.setLayout(new MigLayout("align center , insets 10 10 10 10"));
@@ -255,11 +281,52 @@ public class ClientUI implements ClientUII, WindowListener {
         p1.setLayout(new MigLayout("insets 0 0 0 0"));
         pa.add(p1, "wrap");
         p1.add(new JLabel("地址:"), "width 50::");
-        text_serverAddress = new JTextField();
+        text_serverAddress = new JComboBox();
         text_serverAddress.setToolTipText("主机:端口号");
-        p1.add(text_serverAddress, "width 130::");
+        p1.add(text_serverAddress, "width 150::");
+        text_serverAddress.setEditable(true);
         TextComponentPopupMenu.installToComponent(text_serverAddress);
-
+        
+        ListCellRenderer renderer = new AddressCellRenderer();
+        text_serverAddress.setRenderer(renderer);
+        text_serverAddress.setEditable(true);
+        
+        text_serverAddress.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//System.out.println(text_serverAddress.getSelectedItem().toString());
+			}
+		});
+        
+        for(int n=0;n<config.getRecentAddressList().size();n++){
+        	text_serverAddress.addItem(config.getRecentAddressList().get(n));
+        }
+        
+        if(config.getRecentAddressList().size()==0){
+        	text_serverAddress.setSelectedItem("");
+        }
+        
+        JButton button_removeAddress=createButton("删除");
+        p1.add(button_removeAddress, "");
+        button_removeAddress.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String address=text_serverAddress.getSelectedItem().toString();
+				if(!address.equals("")){
+					int result=JOptionPane.showConfirmDialog(mainFrame, "确定删除吗?","消息", JOptionPane.YES_NO_OPTION);
+					if(result==JOptionPane.OK_OPTION){
+						text_serverAddress.removeItem(address);
+						String selectText="";
+						if(text_serverAddress.getModel().getSize()>0){
+							selectText=text_serverAddress.getModel().getElementAt(0).toString();
+						}
+						text_serverAddress.setSelectedItem(selectText);
+					}
+				}
+			}
+		});
 
         JPanel panelr = new JPanel();
         pa.add(panelr, "wrap");
@@ -304,6 +371,7 @@ public class ClientUI implements ClientUII, WindowListener {
             }
         });
 
+        
         JPanel pa2 = new JPanel();
         sp.add(pa2, "wrap");
         pa2.setLayout(new MigLayout("insets 0 0 0 0"));
@@ -313,6 +381,44 @@ public class ClientUI implements ClientUII, WindowListener {
         pa2.add(text_us, "width 80::");
         text_us.setHorizontalAlignment(JTextField.RIGHT);
         text_us.setEditable(false);
+        
+        
+        JPanel sp2 = new JPanel();
+        sp2.setLayout(new MigLayout("insets 0 0 0 0"));
+        loginPanel.add(sp2, "align center,  wrap");
+        
+        final JCheckBox cb=new JCheckBox("开机启动",config.isAutoStart());
+        sp2.add(cb, "align center");
+		cb.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				config.setAutoStart(cb.isSelected());
+				saveConfig();
+				setAutoRun(config.isAutoStart());
+			}
+
+		});
+		JButton button_show_log=createButton("显示日志");
+		sp2.add(button_show_log,"wrap");
+		button_show_log.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(logFrame==null){
+					 logFrame=new LogFrame(ui);
+		             logFrame.setSize(700, 400);
+		             logFrame.setLocationRelativeTo(null);
+		             los.addListener(logFrame);
+		             
+		             if(los.getBuffer()!=null){
+		            	logFrame.showText(los.getBuffer().toString());
+		     			los.setBuffer(null);
+		             }
+				}
+				logFrame.setVisible(true);
+			}
+		});
 
         JPanel p4 = new JPanel();
         p4.setLayout(new MigLayout("insets 5 0 0 0 "));
@@ -362,15 +468,7 @@ public class ClientUI implements ClientUII, WindowListener {
         updateUISpeed(0, 0, 0);
         setMessage(" ");
 
-        String server_addressTxt = config.getServerAddress();
-        if (config.getServerAddress() != null && !config.getServerAddress().equals("")) {
-            if (config.getServerPort() != 150
-                    && config.getServerPort() != 0) {
-                server_addressTxt += (":" + config.getServerPort());
-            }
-        }
-
-        text_serverAddress.setText(server_addressTxt);
+        text_serverAddress.setSelectedItem(getServerAddressFromConfig());
 
         if (config.getRemoteAddress() != null && !config.getRemoteAddress().equals("") && config.getRemotePort() > 0) {
             String remoteAddressTxt = config.getRemoteAddress() + ":" + config.getRemotePort();
@@ -439,22 +537,25 @@ public class ClientUI implements ClientUII, WindowListener {
         }
 
 
+        boolean tcpEnvSuccess=true;
         checkFireWallOn();
         if (!success_firewall_windows) {
+        	tcpEnvSuccess=false;
             if (isVisible) {
                 mainFrame.setVisible(true);
                 JOptionPane.showMessageDialog(mainFrame, "启动windows防火墙失败,请先运行防火墙服务.");
             }
             MLog.println("启动windows防火墙失败,请先运行防火墙服务.");
-            System.exit(0);
+           // System.exit(0);
         }
         if (!success_firewall_osx) {
+        	tcpEnvSuccess=false;
             if (isVisible) {
                 mainFrame.setVisible(true);
-                JOptionPane.showMessageDialog(mainFrame, "启动ipfw/pf防火墙失败,请先安装.");
+                JOptionPane.showMessageDialog(mainFrame, "启动ipfw/pfctl防火墙失败,请先安装.");
             }
-            MLog.println("启动ipfw/pf防火墙失败,请先安装.");
-            System.exit(0);
+            MLog.println("启动ipfw/pfctl防火墙失败,请先安装.");
+            //System.exit(0);
         }
 
         Thread thread = new Thread() {
@@ -476,14 +577,15 @@ public class ClientUI implements ClientUII, WindowListener {
         }
         //JOptionPane.showMessageDialog(mainFrame,System.getProperty("os.name"));
         if (!b1) {
+        	tcpEnvSuccess=false;
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
 
                     @Override
                     public void run() {
-                        String msg = "启动失败,请先安装libpcap";
+                        String msg = "启动失败,请先安装libpcap,否则无法使用tcp协议";
                         if (systemName.contains("windows")) {
-                            msg = "启动失败,请先安装winpcap";
+                            msg = "启动失败,请先安装winpcap,否则无法使用tcp协议";
                         }
                         if (isVisible) {
                             mainFrame.setVisible(true);
@@ -496,8 +598,9 @@ public class ClientUI implements ClientUII, WindowListener {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
+                            tcpEnable=false;
+                            //System.exit(0);
                         }
-                        System.exit(0);
                     }
 
                 });
@@ -510,11 +613,11 @@ public class ClientUI implements ClientUII, WindowListener {
 
 
         try {
-            mapClient = new MapClient(this);
+            mapClient = new MapClient(this,tcpEnvSuccess);
         } catch (final Exception e1) {
             e1.printStackTrace();
             capException = e1;
-            //System.exit(0);;
+            //System.exit(0);
         }
 
         try {
@@ -556,7 +659,7 @@ public class ClientUI implements ClientUII, WindowListener {
         });
 
         setSpeed(config.getDownloadSpeed(), config.getUploadSpeed());
-        if (isVisible) {
+        if (isVisible&!min) {
             mainFrame.setVisible(true);
         }
 
@@ -566,6 +669,18 @@ public class ClientUI implements ClientUII, WindowListener {
             SpeedSetFrame sf = new SpeedSetFrame(ui, mainFrame);
         }
 
+        
+    }
+    
+    String getServerAddressFromConfig(){
+    	 String server_addressTxt = config.getServerAddress();
+         if (config.getServerAddress() != null && !config.getServerAddress().equals("")) {
+             if (config.getServerPort() != 150
+                     && config.getServerPort() != 0) {
+                 server_addressTxt += (":" + config.getServerPort());
+             }
+         }
+         return server_addressTxt;
     }
 
     void checkFireWallOn() {
@@ -575,19 +690,18 @@ public class ClientUI implements ClientUII, WindowListener {
                 final Process p = Runtime.getRuntime().exec(runFirewall, null);
                 osx_fw_ipfw = true;
             } catch (IOException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
             runFirewall = "pfctl";
             try {
                 final Process p = Runtime.getRuntime().exec(runFirewall, null);
                 osx_fw_pf = true;
             } catch (IOException e) {
-                e.printStackTrace();
+               // e.printStackTrace();
             }
             success_firewall_osx = osx_fw_ipfw | osx_fw_pf;
         } else if (systemName.contains("linux")) {
             String runFirewall = "service iptables start";
-
         } else if (systemName.contains("windows")) {
             String runFirewall = "netsh advfirewall set allprofiles state on";
             Thread standReadThread = null;
@@ -685,7 +799,7 @@ public class ClientUI implements ClientUII, WindowListener {
                 if (isVisible) {
                     JOptionPane.showMessageDialog(null, "请以管理员身份运行! ");
                 }
-                MLog.println("请以管理员身份运行! ");
+                MLog.println("请以管理员身份运行,否则可能无法正常工作! ");
 //                System.exit(0);
             }
         }
@@ -763,6 +877,16 @@ public class ClientUI implements ClientUII, WindowListener {
             if (json.containsKey("protocal")) {
                 cfg.setProtocal(json.getString("protocal"));
             }
+            if (json.containsKey("auto_start")) {
+                cfg.setAutoStart(json.getBooleanValue("auto_start"));
+            }
+            if (json.containsKey("recent_address_list")) {
+            	JSONArray list=json.getJSONArray("recent_address_list");
+            	for (int i = 0; i < list.size(); i++) {
+            		cfg.getRecentAddressList().add(list.get(i).toString());
+				}
+            }
+           
             config = cfg;
         } catch (Exception e) {
             e.printStackTrace();
@@ -776,9 +900,12 @@ public class ClientUI implements ClientUII, WindowListener {
                 boolean success = false;
                 try {
                     int serverPort = 150;
-                    String addressTxt = text_serverAddress.getText();
+                    String addressTxt ="";
+                    if(text_serverAddress.getSelectedItem()!=null){
+                    	addressTxt =text_serverAddress.getSelectedItem().toString();
+                    }
                     addressTxt = addressTxt.trim().replaceAll(" ", "");
-                    text_serverAddress.setText(addressTxt);
+                   
                     String serverAddress = addressTxt;
                     if (addressTxt.startsWith("[")) {
                         int index = addressTxt.lastIndexOf("]:");
@@ -808,6 +935,29 @@ public class ClientUI implements ClientUII, WindowListener {
                     json.put("upload_speed", config.getUploadSpeed());
                     json.put("socks5_port", config.getSocks5Port());
                     json.put("protocal", protocal);
+                    json.put("auto_start", config.isAutoStart());
+
+                    
+                    if(text_serverAddress.getModel().getSize()>0){
+                    	text_serverAddress.removeItem(addressTxt);
+                    }
+                    text_serverAddress.insertItemAt(addressTxt, 0);
+                    text_serverAddress.setSelectedItem(addressTxt);;
+                    
+
+                    JSONArray recentAddressList=new JSONArray();
+                    
+                    
+                    int size=text_serverAddress.getModel().getSize();
+                    for(int n=0;n<size;n++){
+                    	String address=text_serverAddress.getModel().getElementAt(n).toString();
+                    	if(!address.equals("")){
+                    		recentAddressList.add(address);
+                    	}
+                    }
+                    json.put("recent_address_list", recentAddressList);
+                    
+                    
                     saveFile(json.toJSONString().getBytes("utf-8"), configFilePath);
                     config.setServerAddress(serverAddress);
                     config.setServerPort(serverPort);
@@ -895,7 +1045,7 @@ public class ClientUI implements ClientUII, WindowListener {
             fos.write(data);
         } catch (Exception e) {
             if (systemName.contains("windows")) {
-                JOptionPane.showMessageDialog(null, "请以管理员身份运行222! " + path);
+                JOptionPane.showMessageDialog(null, "保存配置文件失败,请尝试以管理员身份运行! " + path);
                 System.exit(0);
             }
             throw e;
@@ -1000,6 +1150,53 @@ public class ClientUI implements ClientUII, WindowListener {
 
         });
     }
+    
+	public static void setAutoRun(boolean run) {
+		String s = new File(".").getAbsolutePath();
+		String currentPaht = s.substring(0, s.length() - 1);
+		StringBuffer sb = new StringBuffer();
+		StringTokenizer st = new StringTokenizer(currentPaht, "\\");
+		while (st.hasMoreTokens()) {
+			sb.append(st.nextToken());
+			sb.append("\\\\");
+		}
+		ArrayList<String> list = new ArrayList<String>();
+		list.add("Windows Registry Editor Version 5.00");
+		String name="fsclient";
+//		if(PMClientUI.mc){
+//			name="wlg_mc";
+//		}
+		if (run) {
+			list.add("[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run]");
+			list.add("\""+name+"\"=\"" + sb.toString() + "finalspeedclient.exe -min" + "\"");
+		} else {
+			list.add("[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run]");
+			list.add("\""+name+"\"=-");
+		}
+
+		File file = null;
+		try {
+			file = new File("import.reg");
+			FileWriter fw = new FileWriter(file);
+			PrintWriter pw = new PrintWriter(fw);
+			for (int i = 0; i < list.size(); i++) {
+				String ss = list.get(i);
+				if (!ss.equals("")) {
+					pw.println(ss);
+				}
+			}
+			pw.flush();
+			pw.close();
+			Process p = Runtime.getRuntime().exec("regedit /s " + "import.reg");
+			p.waitFor();
+		} catch (Exception e1) {
+			// e1.printStackTrace();
+		} finally {
+			if (file != null) {
+				file.delete();
+			}
+		}
+	}
 
     @Override
     public void windowOpened(WindowEvent e) {

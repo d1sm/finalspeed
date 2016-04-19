@@ -85,7 +85,9 @@ public class CapEnv {
 	
 	boolean detect_by_tcp=true;
 	
-	public boolean tcpEnable=true;
+	public boolean tcpEnable=false;
+	
+	public boolean fwSuccess=true;
 	
 	boolean ppp=false;
 	
@@ -93,8 +95,9 @@ public class CapEnv {
 		capEnv=this;
 	}
 	
-	public CapEnv(boolean isClient){
+	public CapEnv(boolean isClient,boolean fwSuccess){
 		this.client=isClient;
+		this.fwSuccess=fwSuccess;
 		tcpManager=new TunManager(this);
 	}
 
@@ -161,13 +164,25 @@ public class CapEnv {
 				long t=System.currentTimeMillis();
 				while(true){
 					if(System.currentTimeMillis()-t>5*1000){
-						MLog.info("休眠恢复");
-						MLog.println("重新初始化接口");
-						try {
-							initInterface();
-						} catch (Exception e1) {
-							e1.printStackTrace();
+						for(int i=0;i<10;i++){
+							MLog.info("休眠恢复... "+(i+1));
+							try {
+								boolean success=initInterface();
+								if(success){
+									MLog.info("休眠恢复成功 "+(i+1));
+									break;
+								}
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+							
+							try {
+								Thread.sleep(5*1000);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
 						}
+						
 					}
 					t=System.currentTimeMillis();
 					try {
@@ -178,7 +193,7 @@ public class CapEnv {
 				}
 			}
 		};
-		//systemSleepScanThread.start();
+		systemSleepScanThread.start();
 	}
 	
 	PromiscuousMode getMode(PcapNetworkInterface pi){
@@ -192,7 +207,8 @@ public class CapEnv {
 		return mode;
 	}
 	
-	void initInterface() throws Exception{
+	boolean initInterface() throws Exception{
+		boolean success=false;
 		detectInterface();
 		List<PcapNetworkInterface> allDevs = Pcaps.findAllDevs();
 		MLog.println("Network Interface List: ");
@@ -213,7 +229,11 @@ public class CapEnv {
 			if(nif.getDescription()!=null){
 				desString=nif.getDescription();
 			}
+			success=true;
 			MLog.info("Selected Network Interface:\n"+"  "+desString+"   "+nif.getName());
+			if(fwSuccess){
+				tcpEnable=true;
+			}
 		}else {
 			tcpEnable=false;
 			MLog.info("Select Network Interface failed,can't use TCP protocal!\n");
@@ -253,7 +273,10 @@ public class CapEnv {
 			thread.start();
 		}
 		
-		MLog.info("FinalSpeed server start success.");
+		if(!client){
+			MLog.info("FinalSpeed server start success.");
+		}
+		return success;
 	
 	}
 
