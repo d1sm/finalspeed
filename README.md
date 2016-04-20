@@ -2,9 +2,9 @@
 FinalSpeed是高速双边加速软件,可加速所有基于tcp协议的网络服务,在高丢包和高延迟环境下,仍可达到90%的物理带宽利用率,即使高峰时段也能轻松跑满带宽.
 
 ### 安装教程
-[客户端安装说明](http://www.d1sm.net/thread-7-1-1.html)
+[客户端安装说明](http://www.ip4a.com/t/513.html)
 <br />
-[服务端安装说明](http://www.d1sm.net/thread-8-1-1.html)
+[服务端安装说明](http://www.ip4a.com/t/515.html)
 
 ### 使用帮助
 ```
@@ -52,4 +52,4 @@ port_map.json
 }
 ```
 
-论坛 http://www.d1sm.net/forum-44-1.html
+论坛 http://www.ip4a.com/c/131.html
