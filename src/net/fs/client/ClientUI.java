@@ -3,6 +3,8 @@
 package net.fs.client;
 
 import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Insets;
@@ -92,7 +94,7 @@ public class ClientUI implements ClientUII, WindowListener {
 
     int serverVersion = -1;
 
-    int localVersion = 3;
+    int localVersion = 5;
 
     boolean checkingUpdate = false;
 
@@ -141,7 +143,7 @@ public class ClientUI implements ClientUII, WindowListener {
     LogOutputStream los;
     
     boolean tcpEnable=true;
-
+    
     {
         domain = "ip4a.com";
         homeUrl = "http://www.ip4a.com/?client_fs";
@@ -167,8 +169,7 @@ public class ClientUI implements ClientUII, WindowListener {
         initUI();
         checkQuanxian();
         loadConfig();
-        mainFrame.setTitle("FinalSpeed 1.12测试版");
-        mainFrame.addWindowListener(this);
+        mainFrame.setTitle("FinalSpeed 1.2");
         mainPanel = (JPanel) mainFrame.getContentPane();
         mainPanel.setLayout(new MigLayout("align center , insets 10 10 10 10"));
         mainPanel.setBorder(null);
@@ -399,6 +400,7 @@ public class ClientUI implements ClientUII, WindowListener {
 			}
 
 		});
+		
 		JButton button_show_log=createButton("显示日志");
 		sp2.add(button_show_log,"wrap");
 		button_show_log.addActionListener(new ActionListener() {
@@ -456,15 +458,25 @@ public class ClientUI implements ClientUII, WindowListener {
                 saveConfig();
             }
         });
+        
 
+        
         stateText = new JLabel("");
         mainPanel.add(stateText, "align right ,wrap");
+        
+
+        JPanel p5 = new JPanel();
+        p5.setLayout(new MigLayout("insets 5 0 0 0 "));
+        mainPanel.add(p5, "align right");
+        JButton button_fsa = createButton_Link("FS高级版","http://www.xsocks.me/?fsc");
+        p5.add(button_fsa);
+        JButton button_wlt = createButton_Link("网络通内网穿透","http://www.youtusoft.com/?fsc");
+        p5.add(button_wlt);
 
         downloadSpeedField = new JLabel();
         downloadSpeedField.setHorizontalAlignment(JLabel.RIGHT);
-        mainPanel.add(downloadSpeedField, "align right ");
-
-
+        p5.add(downloadSpeedField, "width 130:: ,align right ");
+        
         updateUISpeed(0, 0, 0);
         setMessage(" ");
 
@@ -485,57 +497,61 @@ public class ClientUI implements ClientUII, WindowListener {
         mainFrame.setLocationRelativeTo(null);
 
         PopupMenu trayMenu = new PopupMenu();
-        tray = SystemTray.getSystemTray();
-        trayIcon = new TrayIcon(Toolkit.getDefaultToolkit().getImage(offlineImg), name, trayMenu);
-        trayIcon.setImageAutoSize(true);
-        ActionListener listener = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                mainFrame.toFront();
-                setVisible(true);
-                mainFrame.setVisible(true);
-            }
-        };
-        trayIcon.addActionListener(listener);
-        trayIcon.addMouseListener(new MouseListener() {
+        if(SystemTray.isSupported()){
+             mainFrame.addWindowListener(this);
+        	 tray = SystemTray.getSystemTray();
+             trayIcon = new TrayIcon(Toolkit.getDefaultToolkit().getImage(offlineImg), name, trayMenu);
+             trayIcon.setImageAutoSize(true);
+             ActionListener listener = new ActionListener() {
+                 public void actionPerformed(ActionEvent e) {
+                     mainFrame.toFront();
+                     setVisible(true);
+                     mainFrame.setVisible(true);
+                 }
+             };
+             trayIcon.addActionListener(listener);
+             trayIcon.addMouseListener(new MouseListener() {
 
-            public void mouseClicked(MouseEvent arg0) {
-            }
+                 public void mouseClicked(MouseEvent arg0) {
+                 }
 
-            public void mouseEntered(MouseEvent arg0) {
-            }
+                 public void mouseEntered(MouseEvent arg0) {
+                 }
 
-            public void mouseExited(MouseEvent arg0) {
-            }
+                 public void mouseExited(MouseEvent arg0) {
+                 }
 
-            public void mousePressed(MouseEvent arg0) {
-            }
+                 public void mousePressed(MouseEvent arg0) {
+                 }
 
-            public void mouseReleased(MouseEvent arg0) {
-            }
+                 public void mouseReleased(MouseEvent arg0) {
+                 }
 
-        });
+             });
 
-        try {
-            tray.add(trayIcon);
-        } catch (AWTException e1) {
-            e1.printStackTrace();
+             try {
+                 tray.add(trayIcon);
+             } catch (AWTException e1) {
+                 e1.printStackTrace();
+             }
+             MenuItem item3;
+             try {
+                 item3 = new MenuItem("Exit");
+                 //item3 = new MenuItem("Exit");
+                 ActionListener al = new ActionListener() {
+                     public void actionPerformed(ActionEvent e) {
+                         exit();
+                     }
+                 };
+                 item3.addActionListener(al);
+                 trayMenu.add(item3);
+
+             } catch (Exception e1) {
+                 e1.printStackTrace();
+             }
+        }else{
+        	mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         }
-        MenuItem item3;
-        try {
-            item3 = new MenuItem("Exit");
-            //item3 = new MenuItem("Exit");
-            ActionListener al = new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    exit();
-                }
-            };
-            item3.addActionListener(al);
-            trayMenu.add(item3);
-
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
-
 
         boolean tcpEnvSuccess=true;
         checkFireWallOn();
@@ -1071,6 +1087,27 @@ public class ClientUI implements ClientUII, WindowListener {
         button.setFocusPainted(false);
         return button;
     }
+    
+    JButton createButton_Link(String name,final String url) {
+        JButton button = new JButton(name);
+        Color c = new Color(0,0,255);
+        button.setBackground(c);  
+        button.setForeground(new Color(100,100,255));
+        button.setBorderPainted(false);
+        button.setOpaque(false);
+        button.setMargin(new Insets(0, 2, 0, 2));
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openUrl(url);
+            }
+        });
+        return button;
+    }
+    
 
     boolean haveNewVersion() {
         return serverVersion > localVersion;

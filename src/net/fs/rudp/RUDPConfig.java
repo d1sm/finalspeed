@@ -12,7 +12,7 @@ public class RUDPConfig {
 	
 	public static boolean twice_tcp=false;
 		
-	public static int maxWin = 5*1024;
+	public static int maxWin = 2*1024;
 	
 	public static int ackListDelay = 5;
 	public static int ackListSum = 300;
@@ -20,7 +20,7 @@ public class RUDPConfig {
 	public static boolean double_send_start = true;
 	
 	public static int reSendDelay_min = 100;
-	public static float reSendDelay = 0.37f;
-	public static int reSendTryTimes = 10;
+	public static float reSendDelay = 0.8f;
+	public static int reSendTryTimes = 5;
 
 }

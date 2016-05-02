@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import net.fs.rudp.Route;
 import net.fs.utils.ByteShortConvert;
@@ -27,6 +28,7 @@ import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 import org.pcap4j.core.PcapStat;
 import org.pcap4j.core.Pcaps;
+import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.EthernetPacket.EthernetHeader;
 import org.pcap4j.packet.IllegalPacket;
@@ -68,8 +70,6 @@ public class CapEnv {
 	private  final int SNAPLEN= 10*1024; 
 
 	HashMap<Integer, TCPTun> tunTable=new HashMap<Integer, TCPTun>();
-
-	LinkedBlockingQueue<Packet> packetList=new LinkedBlockingQueue<Packet>();
 	
 	Random random=new Random();
 
@@ -103,61 +103,6 @@ public class CapEnv {
 
 	public void init() throws Exception{
 		initInterface();
-		Thread thread_process=new Thread(){
-
-			public void run(){
-				while(true){
-					try {
-						Packet packet=packetList.take();
-						EthernetPacket packet_eth=(EthernetPacket) packet;
-						EthernetHeader head_eth=packet_eth.getHeader();
-						
-						IpV4Packet ipV4Packet=null;
-						if(ppp){
-							ipV4Packet=getIpV4Packet_pppoe(packet_eth);
-						}else {
-							if(packet_eth.getPayload() instanceof IpV4Packet){
-								ipV4Packet=(IpV4Packet) packet_eth.getPayload();
-							}
-						}
-						if(ipV4Packet!=null){
-							IpV4Header ipV4Header=ipV4Packet.getHeader();
-							if(ipV4Packet.getPayload() instanceof TcpPacket){
-								TcpPacket tcpPacket=(TcpPacket) ipV4Packet.getPayload();
-								TcpHeader tcpHeader=tcpPacket.getHeader();
-								if(client){
-									TCPTun conn=tcpManager.getTcpConnection_Client(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value(), tcpHeader.getDstPort().value());
-									if(conn!=null){
-										conn.process_client(capEnv,packet,head_eth,ipV4Header,tcpPacket,false);
-									}
-								}else {
-									TCPTun conn=null;conn = tcpManager.getTcpConnection_Server(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value());
-									if(
-											tcpHeader.getDstPort().value()==listenPort){
-										if(tcpHeader.getSyn()&&!tcpHeader.getAck()&&conn==null){
-											conn=new TCPTun(capEnv,ipV4Header.getSrcAddr(),tcpHeader.getSrcPort().value());
-											tcpManager.addConnection_Server(conn);
-										}
-										conn = tcpManager.getTcpConnection_Server(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value());
-										if(conn!=null){
-											conn.process_server(packet,head_eth,ipV4Header,tcpPacket,true);
-										}
-									}
-								}
-							}else if(packet_eth.getPayload() instanceof IllegalPacket){
-								MLog.println("IllegalPacket!!!");
-							}
-						}
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					} catch (IllegalRawDataException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-
-		};
-		thread_process.start();
 		
 		Thread systemSleepScanThread=new Thread(){
 			public void run(){
@@ -194,6 +139,49 @@ public class CapEnv {
 			}
 		};
 		systemSleepScanThread.start();
+	}
+	
+	void processPacket(Packet packet) throws Exception{
+		EthernetPacket packet_eth=(EthernetPacket) packet;
+		EthernetHeader head_eth=packet_eth.getHeader();
+		
+		IpV4Packet ipV4Packet=null;
+		if(ppp){
+			ipV4Packet=getIpV4Packet_pppoe(packet_eth);
+		}else {
+			if(packet_eth.getPayload() instanceof IpV4Packet){
+				ipV4Packet=(IpV4Packet) packet_eth.getPayload();
+			}
+		}
+		if(ipV4Packet!=null){
+			IpV4Header ipV4Header=ipV4Packet.getHeader();
+			if(ipV4Packet.getPayload() instanceof TcpPacket){
+				TcpPacket tcpPacket=(TcpPacket) ipV4Packet.getPayload();
+				TcpHeader tcpHeader=tcpPacket.getHeader();
+				if(client){
+					TCPTun conn=tcpManager.getTcpConnection_Client(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value(), tcpHeader.getDstPort().value());
+					if(conn!=null){
+						conn.process_client(capEnv,packet,head_eth,ipV4Header,tcpPacket,false);
+					}
+				}else {
+					TCPTun conn=null;conn = tcpManager.getTcpConnection_Server(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value());
+					if(
+							tcpHeader.getDstPort().value()==listenPort){
+						if(tcpHeader.getSyn()&&!tcpHeader.getAck()&&conn==null){
+							conn=new TCPTun(capEnv,ipV4Header.getSrcAddr(),tcpHeader.getSrcPort().value());
+							tcpManager.addConnection_Server(conn);
+						}
+						conn = tcpManager.getTcpConnection_Server(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value());
+						if(conn!=null){
+							conn.process_server(packet,head_eth,ipV4Header,tcpPacket,true);
+						}
+					}
+				}
+			}else if(packet_eth.getPayload() instanceof IllegalPacket){
+				MLog.println("IllegalPacket!!!");
+			}
+		}
+	
 	}
 	
 	PromiscuousMode getMode(PcapNetworkInterface pi){
@@ -239,8 +227,18 @@ public class CapEnv {
 			MLog.info("Select Network Interface failed,can't use TCP protocal!\n");
 		}
 		if(tcpEnable){
-			sendHandle = nif.openLive(SNAPLEN,getMode(nif), READ_TIMEOUT);
-			final PcapHandle handle= nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
+			sendHandle = nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
+//			final PcapHandle handle= nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
+			
+			String filter="";
+			if(!client){
+				//服务端
+				filter="tcp dst port "+toUnsigned(listenPort);
+			}else{
+				//客户端
+				filter="tcp";
+			}
+			sendHandle.setFilter(filter, BpfCompileMode.OPTIMIZE);
 
 			final PacketListener listener= new PacketListener() {
 				@Override
@@ -248,7 +246,7 @@ public class CapEnv {
 
 					try {
 						if(packet instanceof EthernetPacket){
-							packetList.add(packet);
+							processPacket(packet);
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -261,9 +259,9 @@ public class CapEnv {
 
 				public void run(){
 					try {
-						handle.loop(COUNT, listener);
-						PcapStat ps = handle.getStats();
-						handle.close();
+						sendHandle.loop(COUNT, listener);
+						PcapStat ps = sendHandle.getStats();
+						sendHandle.close();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -382,11 +380,7 @@ public class CapEnv {
 		}
 		
 		//detectMac_udp();
-		try {
-			detectMac_tcp();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+		detectMac_tcp();
 	
 	
 		Iterator<PcapNetworkInterface> it=handleTable.keySet().iterator();
@@ -466,8 +460,26 @@ public class CapEnv {
 		}
 	}
 	
-	private void detectMac_tcp() throws UnknownHostException{
-		InetAddress address=InetAddress.getByName("www.bing.com");
+	private void detectMac_tcp() {
+		InetAddress address=null;
+		try {
+			address = InetAddress.getByName("bing.com");
+		} catch (UnknownHostException e2) {
+			e2.printStackTrace();
+			try {
+				address = InetAddress.getByName("163.com");
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				try {
+					address = InetAddress.getByName("apple.com");
+				} catch (UnknownHostException e1) {
+					e1.printStackTrace();
+				}
+			}
+		}
+		if(address==null){
+			MLog.println("域名解析失败,请检查DNS设置!");
+		}
 		final int por=80;
 		testIp_tcp=address.getHostAddress();
 		for(int i=0;i<5;i++){

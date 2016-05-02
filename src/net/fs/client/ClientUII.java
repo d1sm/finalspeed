@@ -15,6 +15,6 @@ public interface ClientUII {
 	
 	boolean isOsx_fw_pf();
 	
-	 boolean isOsx_fw_ipfw();
+	boolean isOsx_fw_ipfw();
 
 }
