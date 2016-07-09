@@ -22,7 +22,6 @@ start(){
 	ulimit -s 65535
 	ulimit -n 65535
 	tram=$( free -m | awk '/Mem/ {print $2}' )
-	serverv=$( cat $conf)
 	if [ "$tram" -le 128 ]; then
 			nohup java -Xmx64M -XX:MaxGCPauseMillis=30 -jar /fs/fs.jar > $logname 2>&1  &
 	elif [ "$tram" -le 256 ]; then
