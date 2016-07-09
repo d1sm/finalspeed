@@ -1,0 +1,91 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          finalspeed
+# Required-Start:    $network $syslog $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start or stop the finalspeed server
+# Description:       Start or stop the finalspeed server
+### END INIT INFO
+
+# Author: 91yun <http://www.91yun.org>
+
+name=finalspeed
+BIN=/fs/fs.sh
+conf=/fs/fs.conf
+logname=/fs/server.log
+
+start(){
+	ulimit -s 65535
+	ulimit -n 65535
+	tram=$( free -m | awk '/Mem/ {print $2}' )
+	if [ "$tram" -le 128 ]; then
+			nohup java -Xmx64M -XX:MaxGCPauseMillis=30 -jar /fs/fs.jar > $logname 2>&1  &
+	elif [ "$tram" -le 256 ]; then
+			nohup java -Xmx128M -XX:MaxGCPauseMillis=30 -jar /fs/fs.jar > $logname 2>&1  &
+	elif [ "$tram" -le 512 ]; then
+			nohup java -Xmx256M -XX:MaxGCPauseMillis=30 -jar /fs/fs.jar > $logname 2>&1  &
+	elif [ "$tram" -gt 512 ]; then
+			nohup java -Xmx512M -XX:MaxGCPauseMillis=30 -jar /fs/fs.jar > $logname 2>&1  &
+	fi
+    RETVAL=$?
+    if [ "$RETVAL" = "0" ]; then
+		tail $logname
+        echo "$name start success"
+    else
+		tail $logname
+		echo "$name start failed"
+    fi
+}
+
+stop(){
+    pid=`ps -ef | grep fs.jar | grep -v grep | awk '{print $2}'`
+    if [[ ! -z $pid ]]; then
+        ps -ef | grep fs.jar | grep -v grep | awk '{print $2}' | xargs kill -s 9
+        RETVAL=$?
+        if [ "$RETVAL" = "0" ]; then
+            echo "$name stop success"
+        else
+            echo "$name stop failed"
+        fi
+    else
+        echo "$name is not running"
+        RETVAL=1
+    fi
+}
+
+status(){
+    pid=`ps -ef | grep fs.jar | grep -v grep | awk '{print $2}'`
+    if [[ -z $pid ]]; then
+        echo "$name is not running"
+        RETVAL=1
+    else
+        echo "$name is running with PID $pid"
+		tail $logname
+        RETVAL=0
+    fi
+}
+
+case "$1" in
+'start')
+	stop
+    start
+    ;;
+'stop')
+    stop
+    ;;
+'status')
+    status
+    ;;
+'restart')
+    stop
+    start
+    RETVAL=$?
+    ;;
+*)
+    echo "Usage: $0 { start | stop | restart | status }"
+    RETVAL=1
+    ;;
+esac
+exit $RETVAL
