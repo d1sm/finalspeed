@@ -5,6 +5,16 @@ export PATH
 #安装地址勿做修改
 install_path=/fs/
 
+
+# Make sure only root can run our script
+function rootness(){
+    if [[ $EUID -ne 0 ]]; then
+       echo "Error:This script must be run as root!" 1>&2
+       exit 1
+    fi
+}
+
+
 function checkenv(){
 		if [[ $OS = "centos" ]]; then
 			yum install epel-release -y
@@ -37,6 +47,7 @@ function checkos(){
  
 #  Install finalspeed
 function install_finalspeed(){
+	rootness
 	checkos
 	checkenv
 	mkdir -p $install_path
