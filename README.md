@@ -1,11 +1,13 @@
 # finalspeed
 高速双边加速软件,在高丢包,延迟环境下仍可达到90%物理带宽利用率.
 
+声明
+本软件为双边TCP加速软件,工作于传输层,仅加快传输层速度,不提供任何具体应用和服务.
 
 高级版官网
 http://www.tcpspeed.com/
 
-XSocks和FinalSpeed区别
+TCPSpeed和FinalSpeed区别
 
 1.tcpspeed是fs的高级版,具备fs的所有功能.
 
