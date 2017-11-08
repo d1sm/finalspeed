@@ -5,7 +5,7 @@
 本软件为双边TCP加速软件,工作于传输层,仅加快传输层速度,不提供任何具体应用和服务.
 
 高级版官网
-http://www.tcpspeed.com/
+http://www.tcpspeed.co/
 
 TCPSpeed和FinalSpeed区别
 
