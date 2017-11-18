@@ -1,8 +1,6 @@
 # finalspeed
 
-高级版官网
-
-请通过代理访问,否则无法打开
+高级版官网 (请通过代理访问,否则无法打开)
 
 http://www.tcpspeed.com/
 
