@@ -1,6 +1,6 @@
 # finalspeed
 
-高级版网站 (请通过全局代理访问,否则无法打开)
+高级版网站 (请通过全局代理访问,或者更新gfwlist,否则无法打开)
 
 http://www.tcpspeed.com/
 
